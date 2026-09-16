@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e069ec3d741d55648bfb793326addc26, type: 3}
+  m_Name: Banco_01
+  m_EditorClassIdentifier: Assembly-CSharp::SoundBankSO
+  bankName: Banco 1
+  pads:
+  - displayName: Clap
+    clip: {fileID: 8300000, guid: a4d5b4306a0eeaa4799346de9705e761, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Crash
+    clip: {fileID: 8300000, guid: f2d257b88286dd04e89972ae343ae1c5, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Hi-Hat
+    clip: {fileID: 8300000, guid: 55fa46d798590174ba62ff74bd87357e, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Kick
+    clip: {fileID: 8300000, guid: 4ee6ef8b62afbc04dba15ecbd5253875, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Ride
+    clip: {fileID: 8300000, guid: 47e1be6a4501488419650df3080e4144, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Snare
+    clip: {fileID: 8300000, guid: 09a8b0a63bd7f7642a7d27957577ab89, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Tom
+    clip: {fileID: 8300000, guid: fb9d708eb6816f845b0333444e25e6ce, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
+  - displayName: Tom 2
+    clip: {fileID: 8300000, guid: f7a16d9fe97dac04cbac4a78dfc8dbbe, type: 3}
+    icon: {fileID: 0}
+    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
