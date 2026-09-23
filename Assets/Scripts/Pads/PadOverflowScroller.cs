@@ -1,72 +1,71 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
-/// Solo se usa en el layout de teléfono. La grilla de 8 pads se dibuja en una fila
-/// más ancha que la pantalla; por defecto se ven los primeros 6, y este componente
-/// permite deslizar (o tocar la flechita del borde) para revolucionar los 2 restantes,
-/// SIN cambiar de banco — es un scroll interno de la sección actual.
+/// Solo se usa en el layout de teléfono. Según el ADD, la grilla de teléfono
+/// es de 3 columnas x 2 filas (6 pads fijos visibles). El ADD no dibuja dónde
+/// quedan los 2 pads restantes del banco (que sí existe, son 8 por banco) —
+/// se agregó este botón/interacción propia: un botón "Ver más" despliega una
+/// tercera fila hacia abajo con los 2 pads que faltan (2 de 3 slots usados).
 ///
-/// Requiere que el contenido (los 8 pads) esté dentro de un RectTransform hijo
-/// ("content") más ancho que el viewport visible.
+/// Requiere:
+///  - Un GameObject "ExtraRow" con los pads 7 y 8 (más un slot vacío o solo 2),
+///    puesto en la fila de abajo de la grilla, inicialmente colapsado (altura 0
+///    o fuera de pantalla).
+///  - Un botón visible ("▾ Ver más" / "▴ Ver menos") que llama a Toggle().
 /// </summary>
-public class PadOverflowScroller : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class PadOverflowScroller : MonoBehaviour
 {
-    [SerializeField] private RectTransform content;     // contiene los 8 pads en fila
-    [SerializeField] private float collapsedOffsetX = 0f;   // posición mostrando pads 1-6
-    [SerializeField] private float expandedOffsetX = -220f; // posición mostrando pads 7-8 (ajustar al ancho real de 2 pads)
-    [SerializeField] private float snapDuration = 0.2f;
+    [SerializeField] private RectTransform extraRow;   // contiene los pads 7 y 8
+    [SerializeField] private Text toggleButtonLabel;    // opcional: cambia el texto/ícono del botón
+    [SerializeField] private string collapsedLabel = "\u25be Ver m\u00e1s"; // ▾
+    [SerializeField] private string expandedLabel = "\u25b4 Ver menos";    // ▴
+    [SerializeField] private float collapsedHeight = 0f;
+    [SerializeField] private float expandedHeight = 220f; // alto real de una fila de pads
+    [SerializeField] private float animDuration = 0.2f;
 
+    private LayoutElement extraRowLayout;
     private bool isExpanded;
-    private Vector2 dragStartPos;
-    private float dragStartOffsetX;
-    private Coroutine snapRoutine;
+    private Coroutine animRoutine;
 
-    public void OnBeginDrag(PointerEventData eventData)
+    private void Awake()
     {
-        dragStartPos = eventData.position;
-        dragStartOffsetX = content.anchoredPosition.x;
-        if (snapRoutine != null) StopCoroutine(snapRoutine);
+        extraRowLayout = extraRow.GetComponent<LayoutElement>();
+        if (extraRowLayout == null) extraRowLayout = extraRow.gameObject.AddComponent<LayoutElement>();
+        extraRowLayout.preferredHeight = collapsedHeight;
+        UpdateLabel();
     }
 
-    public void OnDrag(PointerEventData eventData)
+    /// <summary>Conectar al OnClick() del botón "Ver más / Ver menos".</summary>
+    public void Toggle()
     {
-        float deltaX = eventData.position.x - dragStartPos.x;
-        float newX = Mathf.Clamp(dragStartOffsetX + deltaX, expandedOffsetX, collapsedOffsetX);
-        content.anchoredPosition = new Vector2(newX, content.anchoredPosition.y);
+        isExpanded = !isExpanded;
+        float target = isExpanded ? expandedHeight : collapsedHeight;
+
+        if (animRoutine != null) StopCoroutine(animRoutine);
+        animRoutine = StartCoroutine(AnimateHeight(target));
+        UpdateLabel();
     }
 
-    public void OnEndDrag(PointerEventData eventData)
+    private void UpdateLabel()
     {
-        // Snap al estado más cercano (mostrar 6 o mostrar los 2 extra), como un carrete.
-        float midPoint = (collapsedOffsetX + expandedOffsetX) / 2f;
-        bool goExpanded = content.anchoredPosition.x < midPoint;
-        SnapTo(goExpanded);
+        if (toggleButtonLabel != null)
+        {
+            toggleButtonLabel.text = isExpanded ? expandedLabel : collapsedLabel;
+        }
     }
 
-    /// <summary>Para conectar la flechita lateral del prototipo (toque simple).</summary>
-    public void ToggleViaArrow() => SnapTo(!isExpanded);
-
-    private void SnapTo(bool expanded)
+    private IEnumerator AnimateHeight(float targetHeight)
     {
-        isExpanded = expanded;
-        float target = expanded ? expandedOffsetX : collapsedOffsetX;
-        if (snapRoutine != null) StopCoroutine(snapRoutine);
-        snapRoutine = StartCoroutine(SnapRoutine(target));
-    }
-
-    private IEnumerator SnapRoutine(float targetX)
-    {
-        float startX = content.anchoredPosition.x;
+        float startHeight = extraRowLayout.preferredHeight;
         float t = 0f;
-        while (t < snapDuration)
+        while (t < animDuration)
         {
             t += Time.deltaTime;
-            float x = Mathf.Lerp(startX, targetX, t / snapDuration);
-            content.anchoredPosition = new Vector2(x, content.anchoredPosition.y);
+            extraRowLayout.preferredHeight = Mathf.Lerp(startHeight, targetHeight, t / animDuration);
             yield return null;
         }
-        content.anchoredPosition = new Vector2(targetX, content.anchoredPosition.y);
+        extraRowLayout.preferredHeight = targetHeight;
     }
 }

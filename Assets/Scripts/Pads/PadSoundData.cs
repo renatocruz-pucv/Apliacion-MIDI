@@ -16,7 +16,4 @@ public class PadSoundData
 
     [Tooltip("Ícono opcional para el pad. Si se deja vacío se usa solo el texto.")]
     public Sprite icon;
-
-    [Tooltip("Color del pad y de su luz indicadora cuando está sonando.")]
-    public Color feedbackColor = Color.cyan;
 }

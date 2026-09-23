@@ -14,35 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundBankSO
   bankName: Banco 2
   pads:
-  - displayName: Clap
-    clip: {fileID: 8300000, guid: a4d5b4306a0eeaa4799346de9705e761, type: 3}
+  - displayName: 1
+    clip: {fileID: 8300000, guid: f6537dff3780287468779866c4006f30, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Crash
-    clip: {fileID: 8300000, guid: f2d257b88286dd04e89972ae343ae1c5, type: 3}
+  - displayName: 2
+    clip: {fileID: 8300000, guid: 6309703c6fdf92948a2083ad0e956346, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Hi-Hat
-    clip: {fileID: 8300000, guid: 55fa46d798590174ba62ff74bd87357e, type: 3}
+  - displayName: 3
+    clip: {fileID: 8300000, guid: 62db74e1cfbde5045862aee4349114fc, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Kick
-    clip: {fileID: 8300000, guid: 4ee6ef8b62afbc04dba15ecbd5253875, type: 3}
+  - displayName: 4
+    clip: {fileID: 8300000, guid: 641ad7c259bc321438d753e86cee7346, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Ride
-    clip: {fileID: 8300000, guid: 47e1be6a4501488419650df3080e4144, type: 3}
+  - displayName: 5
+    clip: {fileID: 8300000, guid: 0cbc58fcf542e52449dcaa63f8b33cfc, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Snare
-    clip: {fileID: 8300000, guid: 09a8b0a63bd7f7642a7d27957577ab89, type: 3}
+  - displayName: 6
+    clip: {fileID: 8300000, guid: 235efa0806158c64081fb3aad1f24414, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Tom
-    clip: {fileID: 8300000, guid: fb9d708eb6816f845b0333444e25e6ce, type: 3}
+  - displayName: 7
+    clip: {fileID: 8300000, guid: 20650b9a83b174f468df79f95c3f81b7, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}
-  - displayName: Tom 2
-    clip: {fileID: 8300000, guid: f7a16d9fe97dac04cbac4a78dfc8dbbe, type: 3}
+  - displayName: 8
+    clip: {fileID: 8300000, guid: 124cfd89808c18c4793a559a71e2122a, type: 3}
     icon: {fileID: 0}
-    feedbackColor: {r: 1, g: 1, b: 1, a: 1}

@@ -10,40 +10,59 @@ using UnityEngine.UI;
 /// "Toque rápido: ... reproducir los sonidos al instante, sin esperar a que el
 /// usuario retire el dedo de la pantalla" — OnClick de Unity solo dispara al
 /// soltar, PointerDown dispara al tocar.
+///
+/// Colores según el ADD: el pad se pinta turquesa (theme.padActive) si tiene un
+/// sonido asignado, y gris (theme.padIdle) si el slot está vacío — es un estado
+/// permanente, no la animación de "sonando ahora". Encima de eso, mientras el
+/// audio se reproduce, se agrega un breve resalte (feedbackFlash) que ya existía
+/// en la versión anterior para el requerimiento de feedback visual del GDD.
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class PadButtonUI : MonoBehaviour, IPointerDownHandler
+public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
 {
     [Header("Referencias UI")]
-    [SerializeField] private Text label;           // Cambiar a TMP_Text si el proyecto usa TextMeshPro
+    [SerializeField] private Image background;      // el propio pad; si se deja null, usa el Image de este GameObject
+    [SerializeField] private Text label;             // Cambiar a TMP_Text si el proyecto usa TextMeshPro
     [SerializeField] private Image icon;
-    [SerializeField] private Image feedbackLight;   // Indicador que se enciende mientras suena
+    [SerializeField] private Image feedbackFlash;    // overlay blanco semitransparente que aparece al tocar
 
     private PadSoundData padData;
+    private UIThemeSO theme;
     private Coroutine feedbackRoutine;
-    private Color idleColor = Color.white;
+    private bool hasSound;
 
     private void Awake()
     {
-        if (feedbackLight != null)
-        {
-            idleColor = feedbackLight.color;
-            SetIndicator(false, idleColor);
-        }
+        if (background == null) background = GetComponent<Image>();
+        if (feedbackFlash != null) feedbackFlash.enabled = false;
     }
+
+    private void OnEnable() => ThemeManager.Instance?.Register(this);
+    private void OnDisable() => ThemeManager.Instance?.Unregister(this);
 
     /// <summary>Asigna el sonido que le corresponde a este pad (llamado por BankManager).</summary>
     public void Setup(PadSoundData data)
     {
         padData = data;
-
-        bool hasSound = data != null && data.clip != null;
+        hasSound = data != null && data.clip != null;
 
         if (label != null) label.text = hasSound ? data.displayName : string.Empty;
         if (icon != null) icon.sprite = hasSound ? data.icon : null;
         if (icon != null) icon.enabled = hasSound && data.icon != null;
 
-        SetIndicator(false, idleColor);
+        RepaintBaseColor();
+    }
+
+    public void ApplyTheme(UIThemeSO newTheme)
+    {
+        theme = newTheme;
+        RepaintBaseColor();
+    }
+
+    private void RepaintBaseColor()
+    {
+        if (theme == null || background == null) return;
+        background.color = hasSound ? theme.padActive : theme.padIdle;
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -53,7 +72,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler
 
     private void TriggerPad()
     {
-        if (padData == null || padData.clip == null) return;
+        if (!hasSound) return;
         if (AudioManager.Instance == null) return;
 
         AudioSource voice = AudioManager.Instance.PlaySound(padData.clip);
@@ -63,30 +82,21 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler
     }
 
     /// <summary>
-    /// Enciende la luz indicadora inmediatamente y la apaga cuando el AudioSource
-    /// termina. Si el sonido es largo, el pad se mantiene encendido hasta que
-    /// el audio termina (requerimiento de la sección 6 del GDD).
+    /// Muestra el resalte mientras el AudioSource sigue reproduciendo ESTE clip.
+    /// Si el sonido es largo, se mantiene hasta que el audio termina
+    /// (requerimiento de la sección 6 del GDD).
     /// </summary>
     private IEnumerator ShowFeedbackWhilePlaying(AudioSource voice)
     {
-        SetIndicator(true, padData.feedbackColor);
+        if (feedbackFlash != null) feedbackFlash.enabled = true;
 
-        // Esperamos mientras el AudioSource siga reproduciendo ESTE clip en particular.
-        // (si el pool reasigna la voz a otro sonido antes de que termine, cortamos el feedback igual)
         AudioClip playingClip = padData.clip;
         while (voice != null && voice.isPlaying && voice.clip == playingClip)
         {
             yield return null;
         }
 
-        SetIndicator(false, idleColor);
+        if (feedbackFlash != null) feedbackFlash.enabled = false;
         feedbackRoutine = null;
-    }
-
-    private void SetIndicator(bool active, Color color)
-    {
-        if (feedbackLight == null) return;
-        feedbackLight.color = color;
-        feedbackLight.enabled = active || color == idleColor; // el aro puede quedar visible apagado si se prefiere
     }
 }
