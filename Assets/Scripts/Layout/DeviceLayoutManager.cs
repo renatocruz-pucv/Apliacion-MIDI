@@ -1,9 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// Decide si el dispositivo actual se comporta como "tablet" (8 pads visibles,
-/// más separación entre faders) o "teléfono" (6 pads + panel deslizable, 10
-/// faders más compactos), y fuerza orientación horizontal.
+/// Fuerza orientación horizontal y expone si el dispositivo actual es "tablet"
+/// o "teléfono" (por si algún componente necesita un ajuste puntual, ej. tamaño
+/// de fuente). YA NO decide qué GameObject de Pads mostrar: al ser
+/// ResponsiveGridCellSizer + anclajes fraccionarios (ver PadsScreen), una sola
+/// jerarquía de pads se adapta sola a cualquier tamaño de pantalla, así que
+/// tablet y teléfono comparten la misma PadsScreen.
+///
+/// La pestaña de Mezcla todavía puede diferenciarse por dispositivo si hace
+/// falta (quedan sus campos), pero revisen si con el tiempo también conviene
+/// unificarla del mismo modo.
 ///
 /// Umbral basado en pulgadas de diagonal de pantalla, criterio estándar en
 /// Android para distinguir teléfonos de tablets (~ 7 pulgadas).
@@ -12,13 +19,9 @@ public class DeviceLayoutManager : MonoBehaviour
 {
     [SerializeField] private float tabletDiagonalInchesThreshold = 7f;
 
-    [Header("Layouts - Pestaña de Pads")]
-    [SerializeField] private GameObject tabletPadLayout;   // 8 pads fijos, sin drawer
-    [SerializeField] private GameObject phonePadLayout;    // 6 pads + PadOverflowScroller
-
-    [Header("Layouts - Pestaña de Mezcla")]
-    [SerializeField] private GameObject tabletMixerLayout; // 10 faders más separados
-    [SerializeField] private GameObject phoneMixerLayout;  // 10 faders más compactos
+    [Header("Layouts - Pestaña de Mezcla (si aún se diferencian por dispositivo)")]
+    [SerializeField] private GameObject tabletMixerLayout;
+    [SerializeField] private GameObject phoneMixerLayout;
 
     public bool IsTablet { get; private set; }
 
@@ -31,7 +34,7 @@ public class DeviceLayoutManager : MonoBehaviour
         Screen.autorotateToPortraitUpsideDown = false;
 
         IsTablet = ComputeIsTablet();
-        ApplyLayout();
+        ApplyMixerLayout();
     }
 
     private bool ComputeIsTablet()
@@ -50,10 +53,8 @@ public class DeviceLayoutManager : MonoBehaviour
         return diagonal >= tabletDiagonalInchesThreshold;
     }
 
-    private void ApplyLayout()
+    private void ApplyMixerLayout()
     {
-        if (tabletPadLayout != null) tabletPadLayout.SetActive(IsTablet);
-        if (phonePadLayout != null) phonePadLayout.SetActive(!IsTablet);
         if (tabletMixerLayout != null) tabletMixerLayout.SetActive(IsTablet);
         if (phoneMixerLayout != null) phoneMixerLayout.SetActive(!IsTablet);
     }

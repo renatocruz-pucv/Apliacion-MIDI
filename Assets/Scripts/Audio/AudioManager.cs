@@ -57,6 +57,7 @@ public class AudioManager : MonoBehaviour
 
         BuildVoicePool();
         PreloadAllClips();
+        SetMasterVolume(initialVolume01);
     }
 
     private void BuildVoicePool()
@@ -126,12 +127,41 @@ public class AudioManager : MonoBehaviour
 
     // ---------------- Volumen general ----------------
 
-    /// <summary>value entre 0 (silencio) y 1 (máximo).</summary>
+    [Header("Volumen General")]
+    [Tooltip("Umbral por debajo del cual se considera 'arrastrado al mínimo' y se mutea explícitamente.")]
+    [SerializeField] private float muteThreshold01 = 0.01f;
+    [SerializeField] private float mutedDb = -80f; // silencio real para el AudioMixer
+    [SerializeField] [Range(0f, 1f)] private float initialVolume01 = 1f;
+
+    public bool IsMuted { get; private set; }
+    public float CurrentVolume01 { get; private set; }
+
+    /// <summary>
+    /// Se dispara cada vez que el volumen cambia, sin importar qué slider lo originó.
+    /// Lo usan los MasterVolumeController de cada pantalla (Pads y Mezcla) para
+    /// mantener sus perillas sincronizadas entre sí.
+    /// </summary>
+    public event System.Action<float> OnMasterVolumeChanged;
+
+    /// <summary>value entre 0 (silencio) y 1 (máximo). Al llegar al mínimo mutea explícitamente
+    /// en vez de solo acercarse a -80dB por la curva logarítmica.</summary>
     public void SetMasterVolume(float value01)
     {
-        float clamped = Mathf.Clamp(value01, 0.0001f, 1f);
-        float db = Mathf.Log10(clamped) * 20f;
-        masterMixer.SetFloat(masterVolumeParam, db);
+        CurrentVolume01 = Mathf.Clamp01(value01);
+        IsMuted = CurrentVolume01 <= muteThreshold01;
+
+        if (IsMuted)
+        {
+            masterMixer.SetFloat(masterVolumeParam, mutedDb);
+        }
+        else
+        {
+            float clamped = Mathf.Clamp(CurrentVolume01, 0.0001f, 1f);
+            float db = Mathf.Log10(clamped) * 20f;
+            masterMixer.SetFloat(masterVolumeParam, db);
+        }
+
+        OnMasterVolumeChanged?.Invoke(CurrentVolume01);
     }
 
     // ---------------- Bass Boost ----------------
