@@ -25,9 +25,16 @@ public class AudioManager : MonoBehaviour
 
     [Header("Mixer")]
     [SerializeField] private AudioMixer masterMixer;
-    [SerializeField] private AudioMixerGroup sfxMixerGroup;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup; // fallback si un pad no tiene canal asignado
     [SerializeField] private string masterVolumeParam = "MasterVolume";
     [SerializeField] private string bassGainParam = "BassGain";
+
+    [Header("Canales 1-8 (uno por posición de pad, deben calzar en orden con MixerChannelController)")]
+    [Tooltip("Arrastra acá los grupos Channel1...Channel8 del AudioMixer, EN ORDEN " +
+             "(elemento 0 = Channel1, elemento 7 = Channel8). Cada pad rutea según SU POSICIÓN " +
+             "en la grilla (slot 0-7), no según qué sonido tenga — así el fader de cada canal " +
+             "siempre controla 'lo que sea que esté en ese pad ahora', incluso al cambiar de banco.")]
+    [SerializeField] private AudioMixerGroup[] channelGroups = new AudioMixerGroup[8];
 
     [Header("Polifonía")]
     [Tooltip("Cantidad de sonidos que pueden sonar exactamente al mismo tiempo.")]
@@ -40,7 +47,6 @@ public class AudioManager : MonoBehaviour
     [Header("Bass Boost")]
     [SerializeField] private float bassGainOffDb = 0f;
     [SerializeField] private float bassGainOnDb = 12f;
-    private bool bassBoostEnabled;
 
     private readonly List<AudioSource> voicePool = new List<AudioSource>();
     private int nextVoiceIndex;
@@ -96,18 +102,50 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Reproduce un clip usando la próxima voz libre del pool (round-robin sobre las
-    /// que no están sonando). Devuelve el AudioSource usado para que quien llamó
-    /// (por ejemplo un pad) pueda saber cuándo termina y apagar su luz indicadora.
+    /// Reproduce un clip SIN rutear a ningún canal específico (sale por SFX).
+    /// Úsala solo para sonidos que no vienen de un pad de la grilla (por ejemplo
+    /// un efecto de UI). Los pads deben usar la sobrecarga con slotIndex.
     /// </summary>
     public AudioSource PlaySound(AudioClip clip)
     {
         if (clip == null) return null;
 
         AudioSource source = GetFreeVoice();
+        source.outputAudioMixerGroup = sfxMixerGroup;
         source.clip = clip;
         source.Play();
         return source;
+    }
+
+    /// <summary>
+    /// Reproduce un clip ruteado al canal Channel(slotIndex+1) del Mixer, según la
+    /// POSICIÓN física del pad que lo disparó (0-7), no según el sonido en sí.
+    /// Así el fader de ese canal en la pestaña de Mezcla controla lo que sea que
+    /// esté en ese pad ahora mismo, sin importar qué banco esté cargado. Esta es
+    /// la que debe usar PadButtonUI.
+    /// </summary>
+    public AudioSource PlaySound(AudioClip clip, int slotIndex)
+    {
+        if (clip == null) return null;
+
+        AudioSource source = GetFreeVoice();
+        source.outputAudioMixerGroup = GetChannelGroup(slotIndex);
+        source.clip = clip;
+        source.Play();
+        return source;
+    }
+
+    private AudioMixerGroup GetChannelGroup(int slotIndex0To7)
+    {
+        if (slotIndex0To7 < 0 || slotIndex0To7 >= channelGroups.Length || channelGroups[slotIndex0To7] == null)
+        {
+            Debug.LogWarning(
+                $"[AudioManager] No hay AudioMixerGroup asignado para el pad en el slot {slotIndex0To7} " +
+                "(Channel Groups) — este sonido va a salir por SFX sin pasar por ningún canal " +
+                "individual, así que su fader en Mezcla no le hará nada.");
+            return sfxMixerGroup;
+        }
+        return channelGroups[slotIndex0To7];
     }
 
     private AudioSource GetFreeVoice()
@@ -166,14 +204,19 @@ public class AudioManager : MonoBehaviour
 
     // ---------------- Bass Boost ----------------
 
-    public bool BassBoostEnabled => bassBoostEnabled;
+    public float CurrentBassAmount01 { get; private set; }
 
-    public void SetBassBoost(bool enabled)
+    /// <summary>value entre 0 (sin potenciar) y 1 (máximo potenciado). Interpola
+    /// linealmente entre bassGainOffDb y bassGainOnDb — es un fader continuo,
+    /// no un simple on/off.</summary>
+    public void SetBassBoostAmount(float value01)
     {
-        bassBoostEnabled = enabled;
-        float target = enabled ? bassGainOnDb : bassGainOffDb;
-        masterMixer.SetFloat(bassGainParam, target);
+        CurrentBassAmount01 = Mathf.Clamp01(value01);
+        float db = Mathf.Lerp(bassGainOffDb, bassGainOnDb, CurrentBassAmount01);
+        masterMixer.SetFloat(bassGainParam, db);
     }
 
-    public void ToggleBassBoost() => SetBassBoost(!bassBoostEnabled);
+    // Compatibilidad por si en algún lado se quiere un simple on/off en vez del fader.
+    public void SetBassBoost(bool enabled) => SetBassBoostAmount(enabled ? 1f : 0f);
+    public void ToggleBassBoost() => SetBassBoost(CurrentBassAmount01 < 0.5f);
 }

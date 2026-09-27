@@ -3,34 +3,29 @@ using UnityEngine.Audio;
 using UnityEngine.UI;
 
 /// <summary>
-/// Conecta los 10 Sliders de la pestaña de Mezcla (9 canales + 1 general, ver
-/// prototipo con faders numerados 1-9 y 0) a los parámetros expuestos del AudioMixer.
+/// Conecta los 8 Sliders de canal de la pestaña de Mezcla a los parámetros
+/// expuestos del AudioMixer — uno por cada posición de pad en la grilla (0-7).
 ///
-/// IMPORTANTE — decisión de diseño a validar con el equipo/cliente:
-/// El GDD pide 9 faders de canal + 1 maestro, pero la grilla de pads tiene 8 pads
-/// por banco. No son 1 a 1. Este script asume que los 9 canales representan
-/// CATEGORÍAS de sonido fijas (por ejemplo: Efectos, Ambiente, Voces, etc.), y que
-/// cada pad de cada banco está pre-asignado a una de esas 9 categorías/grupos del
-/// AudioMixer (eso se hace en el Editor, ruteando el AudioMixerGroup de cada pad).
-/// Si el cliente en realidad quiere que los 9 faders correspondan a "canal según
-/// posición del pad", hay que ajustar channelParamNames a 8 en vez de 9, o revisar
-/// el alcance con el cliente (ver Requerimientos.md, discrepancia comentada en el README).
+/// El fader maestro y el de Bass NO se manejan acá — usan MasterVolumeController
+/// y BassBoostController respectivamente, cada uno en su propio Slider.
+///
+/// Las etiquetas (channelLabels) muestran el nombre del sonido que hay AHORA en
+/// cada slot, y se actualizan solas cada vez que BankManager cambia de banco —
+/// por eso este script necesita una referencia a BankManager, no solo al Mixer.
 /// </summary>
 public class MixerChannelController : MonoBehaviour
 {
     [SerializeField] private AudioMixer audioMixer;
+    [SerializeField] private BankManager bankManager;
 
-    [Header("Canales 1-9")]
-    [SerializeField] private Slider[] channelSliders = new Slider[9];
-    [SerializeField] private string[] channelParamNames = new string[9]
+    [Header("Canales 1-8 (uno por pad)")]
+    [SerializeField] private Slider[] channelSliders = new Slider[8];
+    [SerializeField] private Text[] channelLabels = new Text[8]; // texto bajo cada fader; cambiar a TMP_Text si aplica
+    [SerializeField] private string[] channelParamNames = new string[8]
     {
-        "Channel1Vol", "Channel2Vol", "Channel3Vol", "Channel4Vol", "Channel5Vol",
-        "Channel6Vol", "Channel7Vol", "Channel8Vol", "Channel9Vol"
+        "Channel1Vol", "Channel2Vol", "Channel3Vol", "Channel4Vol",
+        "Channel5Vol", "Channel6Vol", "Channel7Vol", "Channel8Vol"
     };
-
-    [Header("Canal maestro (\"0\" en el prototipo)")]
-    [SerializeField] private Slider masterSlider;
-    [SerializeField] private string masterParamName = "MasterVolume";
 
     private void Start()
     {
@@ -41,9 +36,28 @@ public class MixerChannelController : MonoBehaviour
             channelSliders[i].onValueChanged.AddListener(value => SetChannelVolume(index, value));
         }
 
-        if (masterSlider != null)
+        if (bankManager != null)
         {
-            masterSlider.onValueChanged.AddListener(SetMasterVolume);
+            bankManager.OnBankLoaded += UpdateChannelLabels;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (bankManager != null)
+        {
+            bankManager.OnBankLoaded -= UpdateChannelLabels;
+        }
+    }
+
+    /// <summary>Refresca el texto bajo cada fader con el nombre del sonido actual en ese slot.</summary>
+    private void UpdateChannelLabels(SoundBankSO bank)
+    {
+        for (int i = 0; i < channelLabels.Length; i++)
+        {
+            if (channelLabels[i] == null) continue;
+            PadSoundData pad = bank.GetPad(i);
+            channelLabels[i].text = (pad != null && pad.clip != null) ? pad.displayName : string.Empty;
         }
     }
 
@@ -51,12 +65,6 @@ public class MixerChannelController : MonoBehaviour
     {
         float db = LinearToDecibel(linear01);
         audioMixer.SetFloat(channelParamNames[channelIndex], db);
-    }
-
-    private void SetMasterVolume(float linear01)
-    {
-        float db = LinearToDecibel(linear01);
-        audioMixer.SetFloat(masterParamName, db);
     }
 
     private static float LinearToDecibel(float linear01)

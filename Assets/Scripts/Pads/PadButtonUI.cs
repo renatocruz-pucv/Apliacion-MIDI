@@ -30,6 +30,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
     private UIThemeSO theme;
     private Coroutine feedbackRoutine;
     private bool hasSound;
+    private int slotIndex; // 0-7, fijo para este pad — define a qué Channel del Mixer rutea
 
     private void Awake()
     {
@@ -40,10 +41,17 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
     private void OnEnable() => ThemeManager.Instance?.Register(this);
     private void OnDisable() => ThemeManager.Instance?.Unregister(this);
 
-    /// <summary>Asigna el sonido que le corresponde a este pad (llamado por BankManager).</summary>
-    public void Setup(PadSoundData data)
+    /// <summary>
+    /// Asigna el sonido que le corresponde a este pad (llamado por BankManager).
+    /// slotIndex (0-7) es la posición física del pad en la grilla — se usa para
+    /// rutear al canal Channel(slotIndex+1) del AudioMixer, así el fader de ese
+    /// número siempre controla "lo que sea que esté en este pad ahora", sin
+    /// importar qué banco esté cargado.
+    /// </summary>
+    public void Setup(PadSoundData data, int slotIndex)
     {
         padData = data;
+        this.slotIndex = slotIndex;
         hasSound = data != null && data.clip != null;
 
         if (label != null) label.text = hasSound ? data.displayName : string.Empty;
@@ -75,7 +83,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
         if (!hasSound) return;
         if (AudioManager.Instance == null) return;
 
-        AudioSource voice = AudioManager.Instance.PlaySound(padData.clip);
+        AudioSource voice = AudioManager.Instance.PlaySound(padData.clip, slotIndex);
 
         if (feedbackRoutine != null) StopCoroutine(feedbackRoutine);
         feedbackRoutine = StartCoroutine(ShowFeedbackWhilePlaying(voice));

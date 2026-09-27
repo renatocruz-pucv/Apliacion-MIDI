@@ -2,15 +2,11 @@ using UnityEngine;
 
 /// <summary>
 /// Fuerza orientación horizontal y expone si el dispositivo actual es "tablet"
-/// o "teléfono" (por si algún componente necesita un ajuste puntual, ej. tamaño
-/// de fuente). YA NO decide qué GameObject de Pads mostrar: al ser
-/// ResponsiveGridCellSizer + anclajes fraccionarios (ver PadsScreen), una sola
-/// jerarquía de pads se adapta sola a cualquier tamaño de pantalla, así que
-/// tablet y teléfono comparten la misma PadsScreen.
-///
-/// La pestaña de Mezcla todavía puede diferenciarse por dispositivo si hace
-/// falta (quedan sus campos), pero revisen si con el tiempo también conviene
-/// unificarla del mismo modo.
+/// o "teléfono", por si algún componente puntual necesita ajustarse según eso
+/// (ej. tamaño de fuente). Ya NO decide qué jerarquía de UI mostrar: tanto
+/// PadsScreen como MixerScreen usan ResponsiveGridCellSizer + anclajes
+/// fraccionarios, así que una sola jerarquía de cada una sirve para cualquier
+/// tamaño de pantalla — tablet y teléfono comparten ambas pantallas completas.
 ///
 /// Umbral basado en pulgadas de diagonal de pantalla, criterio estándar en
 /// Android para distinguir teléfonos de tablets (~ 7 pulgadas).
@@ -18,10 +14,6 @@ using UnityEngine;
 public class DeviceLayoutManager : MonoBehaviour
 {
     [SerializeField] private float tabletDiagonalInchesThreshold = 7f;
-
-    [Header("Layouts - Pestaña de Mezcla (si aún se diferencian por dispositivo)")]
-    [SerializeField] private GameObject tabletMixerLayout;
-    [SerializeField] private GameObject phoneMixerLayout;
 
     public bool IsTablet { get; private set; }
 
@@ -34,7 +26,6 @@ public class DeviceLayoutManager : MonoBehaviour
         Screen.autorotateToPortraitUpsideDown = false;
 
         IsTablet = ComputeIsTablet();
-        ApplyMixerLayout();
     }
 
     private bool ComputeIsTablet()
@@ -51,11 +42,5 @@ public class DeviceLayoutManager : MonoBehaviour
         float diagonal = Mathf.Sqrt(widthInches * widthInches + heightInches * heightInches);
 
         return diagonal >= tabletDiagonalInchesThreshold;
-    }
-
-    private void ApplyMixerLayout()
-    {
-        if (tabletMixerLayout != null) tabletMixerLayout.SetActive(IsTablet);
-        if (phoneMixerLayout != null) phoneMixerLayout.SetActive(!IsTablet);
     }
 }

@@ -17,6 +17,14 @@ public class BankManager : MonoBehaviour
 
     private int currentBankIndex;
 
+    /// <summary>
+    /// Se dispara cada vez que se carga un banco (al iniciar y al cambiar de página).
+    /// MixerChannelController se suscribe a esto para actualizar el NOMBRE que
+    /// aparece bajo cada uno de los 8 faders de canal, ya que cada fader controla
+    /// "lo que sea que esté en ese slot ahora mismo", no un sonido fijo.
+    /// </summary>
+    public event System.Action<SoundBankSO> OnBankLoaded;
+
     private void Start()
     {
         if (swipeNavigator != null)
@@ -42,9 +50,13 @@ public class BankManager : MonoBehaviour
         for (int i = 0; i < padSlots.Length; i++)
         {
             if (padSlots[i] == null) continue;
-            padSlots[i].Setup(bank.GetPad(i));
+            // El índice i (0-7) es el "slot" físico del pad — es lo que usa
+            // AudioManager para rutear al canal Channel(i+1) del Mixer, sin
+            // importar qué sonido específico haya en este banco.
+            padSlots[i].Setup(bank.GetPad(i), i);
         }
 
         pageDots?.SetActivePage(currentBankIndex);
+        OnBankLoaded?.Invoke(bank);
     }
 }
