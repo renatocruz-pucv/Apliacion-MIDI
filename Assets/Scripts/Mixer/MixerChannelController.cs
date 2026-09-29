@@ -27,12 +27,24 @@ public class MixerChannelController : MonoBehaviour
         "Channel5Vol", "Channel6Vol", "Channel7Vol", "Channel8Vol"
     };
 
+    [Tooltip("Volumen (0-1) con el que arranca cada uno de los 8 canales al abrir la app. " +
+             "Sin esto, cada Slider parte donde haya quedado puesto en el Editor (típicamente " +
+             "0), así que algunos pads suenan mudos hasta que alguien suba el fader a mano.")]
+    [SerializeField] [Range(0f, 1f)] private float initialChannelVolume01 = 0.8f;
+
     private void Start()
     {
         for (int i = 0; i < channelSliders.Length; i++)
         {
             int index = i; // captura para el closure
             if (channelSliders[i] == null) continue;
+
+            // Aplica el volumen inicial tanto al Mixer como a la posición visual
+            // del Slider, para que abran ya audibles y la perilla no quede
+            // desincronizada con lo que realmente se está escuchando.
+            channelSliders[i].SetValueWithoutNotify(initialChannelVolume01);
+            SetChannelVolume(index, initialChannelVolume01);
+
             channelSliders[i].onValueChanged.AddListener(value => SetChannelVolume(index, value));
         }
 
