@@ -14,8 +14,16 @@ using UnityEngine.UI;
 /// Colores según el ADD: el pad se pinta turquesa (theme.padActive) si tiene un
 /// sonido asignado, y gris (theme.padIdle) si el slot está vacío — es un estado
 /// permanente, no la animación de "sonando ahora". Encima de eso, mientras el
-/// audio se reproduce, se agrega un breve resalte (feedbackFlash) que ya existía
-/// en la versión anterior para el requerimiento de feedback visual del GDD.
+/// audio se reproduce, se agrega un breve resalte (feedbackFlash) — un overlay
+/// blanco semitransparente que se ENCIENDE/APAGA (enabled = true/false), no que
+/// cambia de color con el tema. Por eso feedbackFlash NO implementa IThemeable:
+/// su color base se deja fijo (blanco semitransparente) desde el Editor, y el
+/// script solo prende/apaga su visibilidad.
+///
+/// IMPORTANTE: Awake() fuerza feedbackFlash.enabled = false al iniciar, para que
+/// cualquier color que haya quedado puesto a mano en el Editor (al armar el
+/// prefab) no quede visible todo el tiempo por error — solo se ve mientras
+/// ShowFeedbackWhilePlaying() lo activa.
 /// </summary>
 [RequireComponent(typeof(Image))]
 public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
@@ -35,6 +43,10 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
     private void Awake()
     {
         if (background == null) background = GetComponent<Image>();
+
+        // Fuerza apagado al iniciar: evita que un color puesto a mano en el
+        // Editor (para poder verlo mientras se arma el prefab) quede visible
+        // permanentemente en vez de solo durante el feedback.
         if (feedbackFlash != null) feedbackFlash.enabled = false;
     }
 

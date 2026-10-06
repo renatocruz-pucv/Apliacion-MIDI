@@ -22,8 +22,19 @@ public class BankManager : MonoBehaviour
     /// MixerChannelController se suscribe a esto para actualizar el NOMBRE que
     /// aparece bajo cada uno de los 8 faders de canal, ya que cada fader controla
     /// "lo que sea que esté en ese slot ahora mismo", no un sonido fijo.
+    ///
+    /// OJO: si algo se suscribe a este evento DESPUÉS de que ya se disparó (por
+    /// ejemplo un panel de Mezcla que arranca con SetActive(false) y recién se
+    /// activa más tarde), se pierde ese primer aviso — por eso también existe
+    /// CurrentBank, para que un suscriptor tardío pueda PREGUNTAR el estado
+    /// actual en vez de depender de haber escuchado el evento a tiempo.
     /// </summary>
     public event System.Action<SoundBankSO> OnBankLoaded;
+
+    /// <summary>El banco cargado ahora mismo — consultable en cualquier momento,
+    /// a diferencia del evento OnBankLoaded que solo se recibe si ya estabas
+    /// suscrito cuando se disparó.</summary>
+    public SoundBankSO CurrentBank => (banks != null && banks.Count > 0) ? banks[currentBankIndex] : null;
 
     private void Start()
     {

@@ -12,6 +12,14 @@ using UnityEngine.UI;
 /// Las etiquetas (channelLabels) muestran el nombre del sonido que hay AHORA en
 /// cada slot, y se actualizan solas cada vez que BankManager cambia de banco —
 /// por eso este script necesita una referencia a BankManager, no solo al Mixer.
+///
+/// IMPORTANTE: MixerScreen puede arrancar con SetActive(false) (el panel de
+/// Mezcla oculto hasta que el usuario toca el botón para entrar). Si este script
+/// se suscribiera a BankManager.OnBankLoaded solo en Start(), se perdería el
+/// aviso del banco inicial — porque PadsScreen ya cargó el banco 0 ANTES de que
+/// el usuario activara el panel de Mezcla por primera vez. Por eso OnEnable()
+/// pide el banco actual directamente (bankManager.CurrentBank) cada vez que el
+/// panel se activa, en vez de depender únicamente de haber escuchado el evento.
 /// </summary>
 public class MixerChannelController : MonoBehaviour
 {
@@ -32,8 +40,45 @@ public class MixerChannelController : MonoBehaviour
              "0), así que algunos pads suenan mudos hasta que alguien suba el fader a mano.")]
     [SerializeField] [Range(0f, 1f)] private float initialChannelVolume01 = 0.8f;
 
+    private bool slidersInitialized;
+
     private void Start()
     {
+        InitializeSlidersOnce();
+
+        if (bankManager != null)
+        {
+            bankManager.OnBankLoaded += UpdateChannelLabels;
+        }
+    }
+
+    private void OnEnable()
+    {
+        // Cubre el caso de MixerScreen arrancando desactivado: Start() de este
+        // componente puede no haber corrido aún la primera vez que se activa
+        // (Unity llama Awake/OnEnable de un objeto inactivo recién cuando se
+        // activa, y Start inmediatamente después) — y aunque corra, el banco
+        // ya pudo haberse cargado antes. Preguntar el estado actual es más
+        // confiable que depender solo del evento.
+        if (bankManager != null && bankManager.CurrentBank != null)
+        {
+            UpdateChannelLabels(bankManager.CurrentBank);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (bankManager != null)
+        {
+            bankManager.OnBankLoaded -= UpdateChannelLabels;
+        }
+    }
+
+    private void InitializeSlidersOnce()
+    {
+        if (slidersInitialized) return;
+        slidersInitialized = true;
+
         for (int i = 0; i < channelSliders.Length; i++)
         {
             int index = i; // captura para el closure
@@ -46,19 +91,6 @@ public class MixerChannelController : MonoBehaviour
             SetChannelVolume(index, initialChannelVolume01);
 
             channelSliders[i].onValueChanged.AddListener(value => SetChannelVolume(index, value));
-        }
-
-        if (bankManager != null)
-        {
-            bankManager.OnBankLoaded += UpdateChannelLabels;
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (bankManager != null)
-        {
-            bankManager.OnBankLoaded -= UpdateChannelLabels;
         }
     }
 
