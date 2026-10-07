@@ -6,8 +6,8 @@ using UnityEngine;
 /// entre claro/oscuro (toggle visible en el ADD, junto al resto de controles).
 ///
 /// Cualquier componente que necesite repintarse al cambiar de tema (fondo, pad,
-/// fader) implementa IThemeable y se registra solo en su OnEnable/OnDisable —
-/// así no hay que mantener una lista a mano en el Inspector.
+/// fader, botón de contraste) implementa IThemeable y se registra solo en su
+/// OnEnable/OnDisable — así no hay que mantener una lista a mano en el Inspector.
 /// </summary>
 [DefaultExecutionOrder(-200)] // debe existir antes que cualquier pad/fader se registre en su OnEnable
 public class ThemeManager : MonoBehaviour
