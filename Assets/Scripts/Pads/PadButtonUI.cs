@@ -11,14 +11,19 @@ using UnityEngine.UI;
 /// usuario retire el dedo de la pantalla" — OnClick de Unity solo dispara al
 /// soltar, PointerDown dispara al tocar.
 ///
-/// Colores según el ADD: el pad se pinta turquesa (theme.padActive) si tiene un
-/// sonido asignado, y gris (theme.padIdle) si el slot está vacío — es un estado
-/// permanente, no la animación de "sonando ahora". Encima de eso, mientras el
-/// audio se reproduce, se agrega un breve resalte (feedbackFlash) — un overlay
-/// blanco semitransparente que se ENCIENDE/APAGA (enabled = true/false), no que
-/// cambia de color con el tema. Por eso feedbackFlash NO implementa IThemeable:
-/// su color base se deja fijo (blanco semitransparente) desde el Editor, y el
-/// script solo prende/apaga su visibilidad.
+/// ARTE: cada pad usa UN solo sprite completo (fondo + ícono ya resuelto por
+/// el diseñador) para cada estado — "apagado" (PadSoundData.iconOff) o
+/// "encendido" (PadSoundData.iconOn). Por eso este componente YA NO tiñe el
+/// Image del pad con theme.padActive/padIdle: esos sprites ya traen su color
+/// final, y aplicarles un tinte adicional los oscurece (Unity multiplica
+/// color * sprite). RepaintBaseColor() de la versión anterior se eliminó por
+/// este motivo — este componente ya no implementa IThemeable.
+///
+/// Mientras el audio se reproduce, se agrega un breve resalte (feedbackFlash)
+/// — un overlay blanco semitransparente que se ENCIENDE/APAGA (enabled =
+/// true/false), no que cambia de color con el tema. Su color base se deja
+/// fijo (blanco semitransparente) desde el Editor, y el script solo
+/// prende/apaga su visibilidad.
 ///
 /// IMPORTANTE: Awake() fuerza feedbackFlash.enabled = false al iniciar, para que
 /// cualquier color que haya quedado puesto a mano en el Editor (al armar el
@@ -26,16 +31,16 @@ using UnityEngine.UI;
 /// ShowFeedbackWhilePlaying() lo activa.
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
+public class PadButtonUI : MonoBehaviour, IPointerDownHandler
 {
     [Header("Referencias UI")]
-    [SerializeField] private Image background;      // el propio pad; si se deja null, usa el Image de este GameObject
+    [Tooltip("La Image que muestra el sprite COMPLETO del pad (fondo + ícono, " +
+             "según el estado). Si se deja null, usa el Image de este GameObject.")]
+    [SerializeField] private Image background;
     [SerializeField] private Text label;             // Cambiar a TMP_Text si el proyecto usa TextMeshPro
-    [SerializeField] private Image icon;
     [SerializeField] private Image feedbackFlash;    // overlay blanco semitransparente que aparece al tocar
 
     private PadSoundData padData;
-    private UIThemeSO theme;
     private Coroutine feedbackRoutine;
     private bool hasSound;
     private int slotIndex; // 0-7, fijo para este pad — define a qué Channel del Mixer rutea
@@ -44,14 +49,15 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
     {
         if (background == null) background = GetComponent<Image>();
 
+        // Asegura que el Image del pad se vea tal cual el sprite, sin ningún
+        // tinte de color encima (blanco = sin modificar el sprite original).
+        background.color = Color.white;
+
         // Fuerza apagado al iniciar: evita que un color puesto a mano en el
         // Editor (para poder verlo mientras se arma el prefab) quede visible
         // permanentemente en vez de solo durante el feedback.
         if (feedbackFlash != null) feedbackFlash.enabled = false;
     }
-
-    private void OnEnable() => ThemeManager.Instance?.Register(this);
-    private void OnDisable() => ThemeManager.Instance?.Unregister(this);
 
     /// <summary>
     /// Asigna el sonido que le corresponde a este pad (llamado por BankManager).
@@ -67,22 +73,23 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IThemeable
         hasSound = data != null && data.clip != null;
 
         if (label != null) label.text = hasSound ? data.displayName : string.Empty;
-        if (icon != null) icon.sprite = hasSound ? data.icon : null;
-        if (icon != null) icon.enabled = hasSound && data.icon != null;
 
-        RepaintBaseColor();
+        RepaintSprite();
     }
 
-    public void ApplyTheme(UIThemeSO newTheme)
+    /// <summary>Elige el sprite completo (apagado/encendido) según si hay sonido asignado.</summary>
+    private void RepaintSprite()
     {
-        theme = newTheme;
-        RepaintBaseColor();
-    }
+        if (background == null) return;
 
-    private void RepaintBaseColor()
-    {
-        if (theme == null || background == null) return;
-        background.color = hasSound ? theme.padActive : theme.padIdle;
+        Sprite target = null;
+        if (padData != null)
+        {
+            target = hasSound ? padData.iconOn : padData.iconOff;
+        }
+
+        background.sprite = target;
+        background.enabled = target != null;
     }
 
     public void OnPointerDown(PointerEventData eventData)

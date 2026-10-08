@@ -20,5 +20,5 @@ MonoBehaviour:
   faderFill: {r: 0.2901961, g: 0.2901961, b: 0.2901961, a: 1}
   textPrimary: {r: 1, g: 1, b: 1, a: 1}
   textSecondary: {r: 1, g: 1, b: 1, a: 0.6}
-  surfaceContrast: {r: 0.7882353, g: 0.7882353, b: 0.7882353, a: 1}
-  onSurfaceContrast: {r: 0.2901961, g: 0.2901961, b: 0.2901961, a: 1}
+  surfaceContrast: {r: 0.2901961, g: 0.2901961, b: 0.2901961, a: 1}
+  onSurfaceContrast: {r: 0.7882353, g: 0.7882353, b: 0.7882353, a: 1}

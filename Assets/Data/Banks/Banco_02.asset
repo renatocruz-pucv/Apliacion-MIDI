@@ -16,25 +16,33 @@ MonoBehaviour:
   pads:
   - displayName: 1
     clip: {fileID: 8300000, guid: f6537dff3780287468779866c4006f30, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 2
     clip: {fileID: 8300000, guid: 6309703c6fdf92948a2083ad0e956346, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 3
     clip: {fileID: 8300000, guid: 62db74e1cfbde5045862aee4349114fc, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 4
     clip: {fileID: 8300000, guid: 641ad7c259bc321438d753e86cee7346, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 5
     clip: {fileID: 8300000, guid: 0cbc58fcf542e52449dcaa63f8b33cfc, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 6
     clip: {fileID: 8300000, guid: 235efa0806158c64081fb3aad1f24414, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 7
     clip: {fileID: 8300000, guid: 20650b9a83b174f468df79f95c3f81b7, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}
   - displayName: 8
     clip: {fileID: 8300000, guid: 124cfd89808c18c4793a559a71e2122a, type: 3}
-    icon: {fileID: 0}
+    iconOff: {fileID: 21300000, guid: 85dc0c6ac5fcbf444bca77bae34d2ecb, type: 3}
+    iconOn: {fileID: 21300000, guid: b6012aeaa5dd6ec45b333b0846772238, type: 3}

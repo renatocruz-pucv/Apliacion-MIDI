@@ -41,7 +41,7 @@ public class ThemedContrastSurface : MonoBehaviour, IThemeable
         if (theme == null) return;
 
         if (surfaceImage != null) surfaceImage.color = theme.surfaceContrast;
-        if (iconOnSurface != null) iconOnSurface.color = theme.onSurfaceContrast;
+        if (iconOnSurface != null) iconOnSurface.color = theme.surfaceContrast;
         if (textOnSurface != null) textOnSurface.color = theme.onSurfaceContrast;
     }
 }
