@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
@@ -9,6 +10,10 @@ using UnityEngine.UI;
 /// sonido de pad al moverlos. En su lugar reproducen un AudioClip de
 /// REFERENCIA fijo (asignado en el Inspector) para que el usuario pueda
 /// escuchar el efecto del cambio igual que en los canales 1-8.
+///
+/// El sonido de referencia suena solo al SOLTAR el fader (IPointerUpHandler),
+/// no en cada frame de arrastre — igual que en MixerChannelController, para
+/// evitar el sonido repetitivo y molesto de dispararlo en cada onValueChanged.
 ///
 /// IMPORTANTE: este componente se agrega SOLO en los Sliders de Master/Bass
 /// dentro de MixerScreen. El fader maestro de la pantalla principal de Pads
@@ -21,9 +26,9 @@ using UnityEngine.UI;
 /// componente NO reemplaza a esos, solo agrega el sonido + la X + el label.
 /// </summary>
 [RequireComponent(typeof(Slider))]
-public class MixerReferenceSoundController : MonoBehaviour
+public class MixerReferenceSoundController : MonoBehaviour, IPointerUpHandler
 {
-    [Tooltip("Sonido de referencia a reproducir cada vez que se mueve este fader " +
+    [Tooltip("Sonido de referencia a reproducir al SOLTAR este fader " +
              "(distinto para Master y para Bass — asignar un clip propio en cada uno).")]
     [SerializeField] private AudioClip referenceClip;
 
@@ -43,23 +48,31 @@ public class MixerReferenceSoundController : MonoBehaviour
 
     private Slider slider;
     private Coroutine percentLabelRoutine;
+    private float lastValue;
 
     private void Awake() => slider = GetComponent<Slider>();
 
     private void OnEnable()
     {
         slider.onValueChanged.AddListener(HandleValueChanged);
+        lastValue = slider.value;
         UpdateMuteIndicator(slider.value);
         if (label != null && percentLabelRoutine == null) label.text = idleLabelText;
     }
 
     private void OnDisable() => slider.onValueChanged.RemoveListener(HandleValueChanged);
 
+    /// <summary>Se llama en CADA frame de arrastre: actualiza la X de mute y el % del label, sin sonido.</summary>
     private void HandleValueChanged(float value01)
     {
+        lastValue = value01;
         UpdateMuteIndicator(value01);
         ShowPercentLabelTemporarily(value01);
+    }
 
+    /// <summary>Se llama UNA VEZ al soltar el fader (clic/touch levantado): acá va el sonido de referencia.</summary>
+    public void OnPointerUp(PointerEventData eventData)
+    {
         if (referenceClip != null && AudioManager.Instance != null)
         {
             AudioManager.Instance.PlaySound(referenceClip);

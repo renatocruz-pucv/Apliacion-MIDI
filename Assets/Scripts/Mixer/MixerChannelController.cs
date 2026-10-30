@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
@@ -13,11 +14,14 @@ using UnityEngine.UI;
 /// Mixer (solo acá — el fader maestro de la pantalla principal de Pads nunca
 /// pasa por este componente, así que no se ve afectado):
 ///
-///   1) Al mover un fader de canal, suena el pad correspondiente (para que el
-///      usuario escuche el efecto del cambio al instante). Al mover Master o
-///      Bass (ver MasterVolumeController/BassBoostController) debería sonar un
-///      clip de REFERENCIA propio en vez de un pad — eso se maneja con
-///      MixerReferenceSoundController en esos dos sliders.
+///   1) Al SOLTAR un fader de canal, suena el pad correspondiente (para que el
+///      usuario escuche el efecto del cambio). No suena en cada frame mientras
+///      se arrastra — eso generaba un sonido molesto y repetitivo — sino una
+///      sola vez, al levantar el dedo/soltar el mouse (IPointerUpHandler).
+///      Al mover Master o Bass (ver MasterVolumeController/BassBoostController)
+///      debería sonar un clip de REFERENCIA propio en vez de un pad — eso se
+///      maneja con MixerReferenceSoundController en esos dos sliders, con el
+///      mismo comportamiento de "solo al soltar".
 ///   2) Si el fader queda en 0, se muestra un indicador visual de "silenciado"
 ///      (muteIndicators[i], ej. una X roja) superpuesto al fader. El indicador
 ///      tiene raycastTarget=false por diseño (ver el prefab) para no bloquear
@@ -40,6 +44,19 @@ using UnityEngine.UI;
 /// </summary>
 public class MixerChannelController : MonoBehaviour
 {
+    /// <summary>
+    /// Detecta cuándo se SUELTA un Slider específico (PointerUp), para disparar
+    /// el sonido de feedback solo en ese momento en vez de en cada frame de
+    /// arrastre. Se agrega automáticamente sobre cada channelSlider[i] desde
+    /// InitializeSlidersOnce() — no hace falta ponerlo a mano en el Editor.
+    /// </summary>
+    private class SliderReleaseNotifier : MonoBehaviour, IPointerUpHandler
+    {
+        public System.Action OnReleased;
+        public void OnPointerUp(PointerEventData eventData) => OnReleased?.Invoke();
+    }
+
+
     [SerializeField] private AudioMixer audioMixer;
     [SerializeField] private BankManager bankManager;
 
@@ -76,6 +93,7 @@ public class MixerChannelController : MonoBehaviour
     private bool slidersInitialized;
     private Coroutine[] percentLabelRoutines;
     private string[] lastPadNames; // lo que channelLabels[i] debe mostrar cuando NO está mostrando el %
+    private float[] lastSliderValues; // último valor conocido de cada slider, para sonar con el valor correcto al soltar
 
     private void Start()
     {
@@ -116,6 +134,7 @@ public class MixerChannelController : MonoBehaviour
 
         percentLabelRoutines = new Coroutine[channelSliders.Length];
         lastPadNames = new string[channelSliders.Length];
+        lastSliderValues = new float[channelSliders.Length];
 
         for (int i = 0; i < channelSliders.Length; i++)
         {
@@ -128,17 +147,35 @@ public class MixerChannelController : MonoBehaviour
             channelSliders[i].SetValueWithoutNotify(initialChannelVolume01);
             SetChannelVolume(index, initialChannelVolume01);
             UpdateMuteIndicator(index, initialChannelVolume01);
+            lastSliderValues[index] = initialChannelVolume01;
 
             channelSliders[i].onValueChanged.AddListener(value => OnChannelSliderChanged(index, value));
+
+            // El sonido de feedback NO va en onValueChanged (dispara en cada
+            // frame mientras se arrastra — eso era el sonido molesto). Se
+            // agrega un listener de PointerUp sobre el mismo GameObject del
+            // Slider para que suene una sola vez, al soltar.
+            SliderReleaseNotifier releaseNotifier = channelSliders[i].gameObject.GetComponent<SliderReleaseNotifier>();
+            if (releaseNotifier == null)
+            {
+                releaseNotifier = channelSliders[i].gameObject.AddComponent<SliderReleaseNotifier>();
+            }
+            releaseNotifier.OnReleased += () => OnChannelSliderReleased(index);
         }
     }
 
+    /// <summary>Se llama en CADA frame de arrastre: actualiza volumen real, X de mute y % del label.</summary>
     private void OnChannelSliderChanged(int index, float value01)
     {
         SetChannelVolume(index, value01);
         UpdateMuteIndicator(index, value01);
         ShowPercentLabelTemporarily(index, value01);
+        lastSliderValues[index] = value01;
+    }
 
+    /// <summary>Se llama UNA VEZ al soltar el fader: acá va el sonido de feedback, para no repetirlo en cada frame.</summary>
+    private void OnChannelSliderReleased(int index)
+    {
         if (playPadSoundOnDrag)
         {
             PlayPadPreviewSound(index);
