@@ -34,7 +34,18 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private string bassGainParam = "BassGain";
     [SerializeField] private float bassGainOffDb = 0f;
     [SerializeField] private float bassGainOnDb = 12f;
+
+    [Tooltip("Cantidad de bass (0-1) con la que arranca la app. Se aplica al AudioMixer " +
+             "en Awake, pisando el valor que haya quedado guardado en el parámetro " +
+             "expuesto (el Editor conserva el último valor puesto por script), y el " +
+             "slider de Bass se posiciona con este mismo valor — así audio y slider " +
+             "siempre parten sincronizados.")]
+    [SerializeField] [Range(0f, 1f)] private float initialBassAmount01 = 0f;
+
     public float CurrentBassAmount01 { get; private set; }
+
+    /// <summary>Se dispara cada vez que cambia el bass, para que los sliders se mantengan sincronizados.</summary>
+    public event System.Action<float> OnBassAmountChanged;
 
     [Header("Bancos (para precarga)")]
     [SerializeField] private List<SoundBankSO> allBanks;
@@ -49,7 +60,7 @@ public class AudioManager : MonoBehaviour
         PreloadAllClips();
 
         SetMasterVolume(initialVolume01);
-        SetBassBoostAmount(0f);
+        SetBassBoostAmount(initialBassAmount01);
     }
 
     private void BuildVoicePool()
@@ -137,6 +148,7 @@ public class AudioManager : MonoBehaviour
         CurrentBassAmount01 = Mathf.Clamp01(value01);
         float db = Mathf.Lerp(bassGainOffDb, bassGainOnDb, CurrentBassAmount01);
         masterMixer.SetFloat(bassGainParam, db);
+        OnBassAmountChanged?.Invoke(CurrentBassAmount01);
     }
 
     public void SetBassBoost(bool enabled) => SetBassBoostAmount(enabled ? 1f : 0f);

@@ -95,31 +95,47 @@ public class MixerChannelController : MonoBehaviour
     private string[] lastPadNames; // lo que channelLabels[i] debe mostrar cuando NO está mostrando el %
     private float[] lastSliderValues; // último valor conocido de cada slider, para sonar con el valor correcto al soltar
 
-    private void Start()
+    /// <summary>
+    /// Crea los arreglos de estado interno si todavía no existen. Se llama desde
+    /// cualquier método que los use, porque Unity ejecuta OnEnable ANTES que
+    /// Start: si estos arreglos se crearan solo en Start(), un OnEnable temprano
+    /// (por ejemplo al activar MixerScreen por primera vez) los encontraría en
+    /// null y fallaría con NullReferenceException, dejando los labels vacíos.
+    /// </summary>
+    private void EnsureStateArrays()
     {
-        InitializeSlidersOnce();
+        if (lastPadNames != null) return;
 
-        if (bankManager != null)
-        {
-            bankManager.OnBankLoaded += UpdateChannelLabels;
-        }
+        int size = Mathf.Max(channelSliders.Length, channelLabels.Length);
+        percentLabelRoutines = new Coroutine[size];
+        lastPadNames = new string[size];
+        lastSliderValues = new float[size];
     }
 
     private void OnEnable()
     {
-        // Cubre el caso de MixerScreen arrancando desactivado: Start() de este
-        // componente puede no haber corrido aún la primera vez que se activa
-        // (Unity llama Awake/OnEnable de un objeto inactivo recién cuando se
-        // activa, y Start inmediatamente después) — y aunque corra, el banco
-        // ya pudo haberse cargado antes. Preguntar el estado actual es más
-        // confiable que depender solo del evento.
-        if (bankManager != null && bankManager.CurrentBank != null)
+        EnsureStateArrays();
+        InitializeSlidersOnce();
+
+        if (bankManager == null) return;
+
+        // Se suscribe acá (no en Start) para que funcione sin importar si este
+        // componente vive en un objeto que arranca activo o desactivado, y se
+        // des-suscribe en OnDisable para no acumular suscripciones al reactivar.
+        bankManager.OnBankLoaded += UpdateChannelLabels;
+
+        // Pregunta el banco actual directamente en vez de depender de haber
+        // escuchado el evento: el banco ya pudo cargarse antes de que este
+        // componente se activara. Leer SoundBankSO no requiere que los labels
+        // estén visibles, así que los nombres quedan puestos desde antes de
+        // que el usuario abra la pantalla.
+        if (bankManager.CurrentBank != null)
         {
             UpdateChannelLabels(bankManager.CurrentBank);
         }
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         if (bankManager != null)
         {
@@ -132,9 +148,7 @@ public class MixerChannelController : MonoBehaviour
         if (slidersInitialized) return;
         slidersInitialized = true;
 
-        percentLabelRoutines = new Coroutine[channelSliders.Length];
-        lastPadNames = new string[channelSliders.Length];
-        lastSliderValues = new float[channelSliders.Length];
+        EnsureStateArrays();
 
         for (int i = 0; i < channelSliders.Length; i++)
         {
@@ -207,6 +221,9 @@ public class MixerChannelController : MonoBehaviour
     /// <summary>Refresca el texto bajo cada fader con el nombre del sonido actual en ese slot.</summary>
     private void UpdateChannelLabels(SoundBankSO bank)
     {
+        if (bank == null) return;
+        EnsureStateArrays();
+
         for (int i = 0; i < channelLabels.Length; i++)
         {
             if (channelLabels[i] == null) continue;

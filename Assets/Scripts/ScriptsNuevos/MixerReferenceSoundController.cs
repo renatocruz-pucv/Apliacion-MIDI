@@ -49,6 +49,7 @@ public class MixerReferenceSoundController : MonoBehaviour, IPointerUpHandler
     private Slider slider;
     private Coroutine percentLabelRoutine;
     private float lastValue;
+    private float lastIndicatorValue = -1f; // valor con el que se calculó la X por última vez
 
     private void Awake() => slider = GetComponent<Slider>();
 
@@ -61,6 +62,23 @@ public class MixerReferenceSoundController : MonoBehaviour, IPointerUpHandler
     }
 
     private void OnDisable() => slider.onValueChanged.RemoveListener(HandleValueChanged);
+
+    /// <summary>
+    /// Revisa la X de mute cada frame. MasterVolumeController y BassBoostController
+    /// posicionan el slider con SetValueWithoutNotify (a propósito, para no
+    /// reaplicar el valor al mixer), y eso NO dispara onValueChanged. Sin esta
+    /// revisión, la X quedaba calculada con el valor que el slider traía de la
+    /// escena (0) y se mostraba aunque el volumen real fuera otro, sobre todo
+    /// cuando MixerScreen arranca desactivado. LateUpdate corre después de los
+    /// OnEnable/Start de los demás controladores, así que ya ven el valor final.
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (!Mathf.Approximately(slider.value, lastIndicatorValue))
+        {
+            UpdateMuteIndicator(slider.value);
+        }
+    }
 
     /// <summary>Se llama en CADA frame de arrastre: actualiza la X de mute y el % del label, sin sonido.</summary>
     private void HandleValueChanged(float value01)
@@ -81,6 +99,7 @@ public class MixerReferenceSoundController : MonoBehaviour, IPointerUpHandler
 
     private void UpdateMuteIndicator(float value01)
     {
+        lastIndicatorValue = value01;
         if (muteIndicator == null) return;
         muteIndicator.SetActive(value01 <= 0.001f);
     }
