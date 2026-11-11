@@ -2,10 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// Representa un "banco" de sonidos: el grupo de 8 pads que se muestra en la
-/// grilla principal. La app viene con varios de estos bancos predefinidos
-/// (sistema cerrado, sin carga de audio externo por parte del usuario).
+/// grilla principal.
 ///
-/// Se crea desde el menú: Assets > Create > MIDI Soundboard > Sound Bank
+/// Hay dos orígenes:
+///  - Bancos de fábrica: assets creados desde el menú Assets > Create >
+///    MIDI Soundboard > Sound Bank, de solo lectura para la persona.
+///  - Bancos personalizados: instancias creadas EN EJECUCIÓN por CustomBankLibrary
+///    a partir de los audios que la persona eligió en su dispositivo (ver SetPad).
 /// </summary>
 [CreateAssetMenu(fileName = "NuevoBanco", menuName = "MIDI Soundboard/Sound Bank")]
 public class SoundBankSO : ScriptableObject
@@ -26,6 +29,21 @@ public class SoundBankSO : ScriptableObject
             return null;
         }
         return pads[index];
+    }
+
+    /// <summary>
+    /// Reemplaza el pad de una posición. Lo usa CustomBankLibrary para armar bancos
+    /// en ejecución; los bancos de fábrica se llenan desde el Inspector y no lo necesitan.
+    /// </summary>
+    public void SetPad(int index, PadSoundData data)
+    {
+        if (pads == null || pads.Length != 8) pads = new PadSoundData[8];
+        if (index < 0 || index >= pads.Length)
+        {
+            Debug.LogWarning($"[SoundBankSO] Índice de pad fuera de rango: {index} en banco '{bankName}'.");
+            return;
+        }
+        pads[index] = data;
     }
 
     public int PadCount => pads.Length;
