@@ -352,7 +352,7 @@ public class BankEditorScreen : MonoBehaviour
             CustomPadData pad = library.GetPadData(currentBank, i);
             bool hasAudio = pad != null && pad.HasAudio;
 
-            string text = "Vacío";
+            string text = "Vacio";
             if (hasAudio) text = string.IsNullOrWhiteSpace(pad.displayName) ? $"Pad {i + 1}" : pad.displayName;
 
             padSlots[i].Bind(i, text, hasAudio, i == selectedPad,
