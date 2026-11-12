@@ -28,6 +28,9 @@ public class SwipeNavigator : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        // Si el deslizamiento era el ajuste de velocidad de un loop, no cambia de banco.
+        if (PadButtonUI.IsLoopGestureActive) return;
+
         float deltaX = eventData.position.x - dragStartPos.x;
 
         if (Mathf.Abs(deltaX) < minSwipeDistance) return;

@@ -21,4 +21,9 @@ public class PadSoundData
     [Tooltip("Sprite completo (fondo + ícono) para cuando el pad tiene un " +
              "sonido asignado / está activo, tal como lo entregó el diseñador.")]
     public Sprite iconOn;
+
+    [Tooltip("Opcional: imagen que se muestra ENCIMA del pad cuando NO tiene sonido (ej. una X). " +
+             "La rellena CustomBankLibrary para los pads vacíos de bancos propios; en los bancos " +
+             "de fábrica se deja vacía.")]
+    public Sprite emptyOverlay;
 }

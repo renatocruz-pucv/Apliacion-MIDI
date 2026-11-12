@@ -43,6 +43,15 @@ public class BankEditorScreen : MonoBehaviour
 
     [SerializeField] private EditorPadSlot[] padSlots = new EditorPadSlot[8];
 
+    [Header("Arte de los pads DEL EDITOR (independiente de PadsScreen)")]
+    [Tooltip("Sprite de un pad sin audio en esta pantalla. Es independiente de los sprites que usa " +
+             "CustomBankLibrary para los pads de PadsScreen. Si queda vacío, el pad conserva el " +
+             "sprite que tenga su Image en el Editor.")]
+    [SerializeField] private Sprite slotEmptySprite;
+
+    [Tooltip("Sprite de un pad con audio en esta pantalla. Si queda vacío, conserva el de su Image.")]
+    [SerializeField] private Sprite slotFilledSprite;
+
     [Header("Panel del pad seleccionado")]
     [SerializeField] private Text selectedPadTitle;
     [SerializeField] private InputField padNameInput;
@@ -356,7 +365,7 @@ public class BankEditorScreen : MonoBehaviour
             if (hasAudio) text = string.IsNullOrWhiteSpace(pad.displayName) ? $"Pad {i + 1}" : pad.displayName;
 
             padSlots[i].Bind(i, text, hasAudio, i == selectedPad,
-                             library.PadIconOff, library.PadIconOn, SelectPad);
+                             slotEmptySprite, slotFilledSprite, SelectPad);
         }
     }
 

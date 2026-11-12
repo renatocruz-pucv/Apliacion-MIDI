@@ -38,6 +38,17 @@ public class CustomBankLibrary : MonoBehaviour
     [Tooltip("Sprite del pad con audio asignado.")]
     [SerializeField] private Sprite padIconOn;
 
+    [Tooltip("Imagen (ej. una X) que se dibuja ENCIMA de los pads sin audio de bancos propios en PadsScreen, " +
+             "sin reemplazar el cuadrado de fondo. Requiere el campo 'Empty Overlay' de cada PadButtonUI. " +
+             "Si queda vacío no se muestra nada.")]
+    [SerializeField] private Sprite emptyPadOverlaySprite;
+
+    [Tooltip("Opcional (recomendado): un banco de fábrica del cual copiar los sprites. Si se asigna, " +
+             "los pads propios usan EXACTAMENTE los mismos Icon Off / Icon On que sus pads (se toma el " +
+             "primer pad que los tenga), y los dos campos de arriba se ignoran. Así se ven y reaccionan " +
+             "igual que los de fábrica, incluido el destello al tocar.")]
+    [SerializeField] private SoundBankSO iconSourceBank;
+
     [Header("Límites")]
     [SerializeField] private int maxBanks = 10;
     [SerializeField] private int maxBankNameLength = 20;
@@ -81,6 +92,8 @@ public class CustomBankLibrary : MonoBehaviour
 
     private void Awake()
     {
+        CopyIconsFromSourceBank();
+
         if (padIconOff == null || padIconOn == null)
         {
             Debug.LogWarning("[CustomBankLibrary] Falta asignar Pad Icon Off / On: los pads de los bancos " +
@@ -111,6 +124,24 @@ public class CustomBankLibrary : MonoBehaviour
             if (bank != null) Destroy(bank);
         }
         runtimeBanks.Clear();
+    }
+
+    private void CopyIconsFromSourceBank()
+    {
+        if (iconSourceBank == null) return;
+
+        Sprite off = null, on = null;
+        for (int i = 0; i < iconSourceBank.PadCount; i++)
+        {
+            PadSoundData pad = iconSourceBank.GetPad(i);
+            if (pad == null) continue;
+            if (off == null) off = pad.iconOff;
+            if (on == null) on = pad.iconOn;
+            if (off != null && on != null) break;
+        }
+
+        if (off != null) padIconOff = off;
+        if (on != null) padIconOn = on;
     }
 
     // ------------------------------------------------------------------
@@ -453,6 +484,7 @@ public class CustomBankLibrary : MonoBehaviour
             displayName = name ?? "",
             clip = clip,
             iconOff = padIconOff,
+            emptyOverlay = emptyPadOverlaySprite,
             iconOn = padIconOn
         };
     }

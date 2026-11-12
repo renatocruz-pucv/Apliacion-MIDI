@@ -112,7 +112,7 @@ public class BankManager : MonoBehaviour
             // El índice i (0-7) es el "slot" físico del pad — es lo que usa
             // AudioManager para rutear al canal Channel(i+1) del Mixer, sin
             // importar qué sonido específico haya en este banco.
-            padSlots[i].Setup(bank.GetPad(i), i);
+            padSlots[i].Setup(bank.GetPad(i), i, bank);
         }
 
         if (bankNameLabel != null) bankNameLabel.text = bank.bankName;

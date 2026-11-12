@@ -17,6 +17,10 @@ public class PageDotsIndicator : MonoBehaviour
 
     public void Build(int pageCount)
     {
+        // Si ya hay la cantidad correcta de puntos no se destruyen y recrean: los bancos propios
+        // avisan de cambios seguido (al cargar audios, al editar) y eso era trabajo y basura de más.
+        if (dots.Count == pageCount && container.childCount == pageCount) return;
+
         foreach (Transform child in container) Destroy(child.gameObject);
         dots.Clear();
 
