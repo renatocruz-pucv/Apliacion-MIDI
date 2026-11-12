@@ -28,7 +28,8 @@ public class ThemeManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
-        IsDarkMode = startInDarkMode;
+        // Si la persona ya eligió un modo antes, se respeta; si no, el valor del Inspector.
+        IsDarkMode = AppSettings.TryGetDarkMode(out bool savedDark) ? savedDark : startInDarkMode;
         CurrentTheme = IsDarkMode ? darkTheme : lightTheme;
     }
 
@@ -46,6 +47,7 @@ public class ThemeManager : MonoBehaviour
     {
         IsDarkMode = dark;
         CurrentTheme = dark ? darkTheme : lightTheme;
+        AppSettings.SetDarkMode(dark);
 
         foreach (var element in registered)
         {

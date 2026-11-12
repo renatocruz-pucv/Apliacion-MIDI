@@ -202,6 +202,8 @@ AudioMixerController:
     name: Channel9Vol
   - guid: 2196deec069691644b398b751ea0d4eb
     name: MasterVolume
+  - guid: 10421f6553317b145bb0e471e5b4aa46
+    name: BassCompensation
   - guid: fc7e295797bbb914896674facc25c783
     name: BassGain
   m_AudioMixerGroupViews:
@@ -264,11 +266,11 @@ AudioMixerSnapshotController:
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: 667b7882d006b3040873423bd95c2882
   m_FloatValues:
-    8ba16411a35199e489db249e065bb3a6: 5
+    8ba16411a35199e489db249e065bb3a6: 2.5
     ed784a835a4eeb74096bca5d518a5aee: 0
-    4f45af558820e1f439a8732baa0e62f9: 5809
+    4f45af558820e1f439a8732baa0e62f9: 95
     10421f6553317b145bb0e471e5b4aa46: 0
-    fc7e295797bbb914896674facc25c783: 0.05
+    fc7e295797bbb914896674facc25c783: 1
     0313aad8768e777449b192e565c68c91: 1
     2196deec069691644b398b751ea0d4eb: 0
     742d696ee65880a4d9e243f5cbcd0324: 1

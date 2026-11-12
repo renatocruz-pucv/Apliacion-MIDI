@@ -158,10 +158,15 @@ public class MixerChannelController : MonoBehaviour
             // Aplica el volumen inicial tanto al Mixer como a la posición visual
             // del Slider, para que abran ya audibles y la perilla no quede
             // desincronizada con lo que realmente se está escuchando.
-            channelSliders[i].SetValueWithoutNotify(initialChannelVolume01);
-            SetChannelVolume(index, initialChannelVolume01);
-            UpdateMuteIndicator(index, initialChannelVolume01);
-            lastSliderValues[index] = initialChannelVolume01;
+            // Si la persona ya movió este fader en una sesión anterior, se recupera ese valor.
+            float startValue = AppSettings.TryGetChannelVolume(index, out float savedValue)
+                ? savedValue
+                : initialChannelVolume01;
+
+            channelSliders[i].SetValueWithoutNotify(startValue);
+            SetChannelVolume(index, startValue);
+            UpdateMuteIndicator(index, startValue);
+            lastSliderValues[index] = startValue;
 
             channelSliders[i].onValueChanged.AddListener(value => OnChannelSliderChanged(index, value));
 
@@ -182,6 +187,7 @@ public class MixerChannelController : MonoBehaviour
     private void OnChannelSliderChanged(int index, float value01)
     {
         SetChannelVolume(index, value01);
+        AppSettings.SetChannelVolume(index, value01);
         UpdateMuteIndicator(index, value01);
         ShowPercentLabelTemporarily(index, value01);
         lastSliderValues[index] = value01;

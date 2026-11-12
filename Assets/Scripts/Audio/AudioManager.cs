@@ -32,8 +32,35 @@ public class AudioManager : MonoBehaviour
 
     [Header("Bass boost")]
     [SerializeField] private string bassGainParam = "BassGain";
-    [SerializeField] private float bassGainOffDb = 0f;
-    [SerializeField] private float bassGainOnDb = 12f;
+
+    public enum BassParamKind
+    {
+        [Tooltip("Parámetro 'Freq Gain' de un ParamEQ: multiplicador lineal 0.05 - 3.0 (1 = sin cambio).")]
+        ParamEqLinearGain,
+        [Tooltip("Parámetro en dB (p. ej. el Attenuation de un grupo).")]
+        DecibelValue
+    }
+
+    [Tooltip("Qué tipo de valor es el parámetro expuesto BassGain. Si es el 'Freq Gain' de un ParamEQ " +
+             "(lo normal), dejar en ParamEqLinearGain: el código convierte los dB a multiplicador.")]
+    [SerializeField] private BassParamKind bassParamKind = BassParamKind.ParamEqLinearGain;
+
+    [Tooltip("Realce de graves con el slider al máximo, en dB. ParamEQ admite como máximo ~9.5 dB (x3). " +
+             "Valores moderados (6-9 dB) suenan a 'más bajo'; más que eso suena a 'más volumen'.")]
+    [SerializeField] [Range(0f, 12f)] private float bassMaxBoostDb = 8f;
+
+    [Tooltip("Curva del slider: 1 = lineal, >1 = el realce crece más hacia el final " +
+             "(los primeros tramos cambian poco, el final se nota más).")]
+    [SerializeField] [Range(1f, 3f)] private float bassCurve = 1.4f;
+
+    [Header("Bass boost - compensación de volumen")]
+    [Tooltip("Parámetro expuesto (en dB) del Attenuation de un grupo (p. ej. SFX, DESPUÉS de la " +
+             "mezcla de canales) que baja el volumen general a medida que sube el bass, para que el " +
+             "slider cambie el timbre y no el volumen. Dejar vacío para desactivar.")]
+    [SerializeField] private string bassCompensationParam = "BassCompensation";
+
+    [Tooltip("Cuántos dB se baja el volumen general con el bass al máximo.")]
+    [SerializeField] [Range(0f, 8f)] private float bassCompensationMaxDb = 3f;
 
     [Tooltip("Cantidad de bass (0-1) con la que arranca la app. Se aplica al AudioMixer " +
              "en Awake, pisando el valor que haya quedado guardado en el parámetro " +
@@ -43,6 +70,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float initialBassAmount01 = 0f;
 
     public float CurrentBassAmount01 { get; private set; }
+    private bool restoringSettings;
 
     /// <summary>Se dispara cada vez que cambia el bass, para que los sliders se mantengan sincronizados.</summary>
     public event System.Action<float> OnBassAmountChanged;
@@ -59,8 +87,13 @@ public class AudioManager : MonoBehaviour
         BuildVoicePool();
         PreloadAllClips();
 
-        SetMasterVolume(initialVolume01);
-        SetBassBoostAmount(initialBassAmount01);
+        // Valores guardados de la sesión anterior; si no hay, los del Inspector.
+        // Mientras se restauran no se vuelve a escribir el archivo (los valores por defecto
+        // del Inspector no deben quedar "congelados" como si la persona los hubiera elegido).
+        restoringSettings = true;
+        SetMasterVolume(AppSettings.TryGetMasterVolume(out float savedMaster) ? savedMaster : initialVolume01);
+        SetBassBoostAmount(AppSettings.TryGetBassAmount(out float savedBass) ? savedBass : initialBassAmount01);
+        restoringSettings = false;
     }
 
     private void BuildVoicePool()
@@ -138,6 +171,7 @@ public class AudioManager : MonoBehaviour
     public void SetMasterVolume(float value01)
     {
         CurrentVolume01 = Mathf.Clamp01(value01);
+        if (!restoringSettings) AppSettings.SetMasterVolume(CurrentVolume01);
         float db = IsMuted ? mutedDb : LinearToDecibel(CurrentVolume01);
         masterMixer.SetFloat(masterVolumeParam, db);
         OnMasterVolumeChanged?.Invoke(CurrentVolume01);
@@ -146,8 +180,24 @@ public class AudioManager : MonoBehaviour
     public void SetBassBoostAmount(float value01)
     {
         CurrentBassAmount01 = Mathf.Clamp01(value01);
-        float db = Mathf.Lerp(bassGainOffDb, bassGainOnDb, CurrentBassAmount01);
-        masterMixer.SetFloat(bassGainParam, db);
+        if (!restoringSettings) AppSettings.SetBassAmount(CurrentBassAmount01);
+
+        // Curva: tramo inicial suave, final más marcado. Con 0 no hay realce (0 dB / x1).
+        float shaped = Mathf.Pow(CurrentBassAmount01, bassCurve);
+        float boostDb = shaped * bassMaxBoostDb;
+
+        float paramValue = bassParamKind == BassParamKind.ParamEqLinearGain
+            ? Mathf.Clamp(Mathf.Pow(10f, boostDb / 20f), 0.05f, 3f)   // dB -> multiplicador del ParamEQ
+            : boostDb;
+        masterMixer.SetFloat(bassGainParam, paramValue);
+
+        // Compensación: al subir graves sube la energía total; se baja un poco el volumen general.
+        if (!string.IsNullOrEmpty(bassCompensationParam))
+        {
+            float compDb = -shaped * bassCompensationMaxDb;
+            masterMixer.SetFloat(bassCompensationParam, compDb);
+        }
+
         OnBassAmountChanged?.Invoke(CurrentBassAmount01);
     }
 
