@@ -85,6 +85,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private PointerEventData pointer;
     private Vector2 downPosition;
     private double downTime;          // Time.unscaledTimeAsDouble del toque
+    private double quantizedBeat = double.NaN; // pulso en que sonará el toque, si esperó el pulso
     private bool wasLoopingAtDown;
     private bool dragged;
     private float startY;
@@ -175,7 +176,15 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
         // Si el slot ya está en loop, el toque NO dispara sonido (la persona puede querer
         // detenerlo o ajustarlo); si no, suena al instante como siempre.
-        if (!wasLoopingAtDown) TriggerPad();
+        // En modo sincronizado con "el primer toque espera el pulso", el sonido se programa para el
+        // siguiente pulso (ver LoopManager.TryScheduleOnNextBeat); si no, suena al instante.
+        quantizedBeat = double.NaN;
+        if (!wasLoopingAtDown)
+        {
+            bool scheduled = loops != null && hasSound &&
+                             loops.TryScheduleOnNextBeat(bank, slotIndex, padData.clip, out quantizedBeat);
+            if (!scheduled) TriggerPad();
+        }
 
         // El hold solo tiene sentido si hay algo que loopear o algo que detener.
         if (loops == null || (!hasSound && !wasLoopingAtDown)) return;
@@ -256,7 +265,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             // Activa el loop con el sonido que acaba de tocarse; los disparos siguientes
             // quedan alineados con ese primer toque.
-            loops.StartLoop(bank, slotIndex, downTime);
+            loops.StartLoop(bank, slotIndex, downTime, quantizedBeat);
         }
 
         startSpeed01 = loops.GetSpeed01(bank, slotIndex);

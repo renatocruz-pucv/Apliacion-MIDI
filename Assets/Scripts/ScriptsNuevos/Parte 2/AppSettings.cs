@@ -25,6 +25,9 @@ public static class AppSettings
         public bool darkMode;
         public float master = -1f;   // -1 = nunca guardado
         public float bass = -1f;
+        public float tempoBpm = -1f;
+        public int loopSync = -1;
+        public int quantizeFirstTap = -1;    // -1 = nunca guardado, 0 = libre, 1 = sincronizado
         public float[] channels = NewChannelArray();
     }
 
@@ -59,6 +62,24 @@ public static class AppSettings
         return Current.hasDarkMode;
     }
 
+    public static bool TryGetTempoBpm(out float bpm)
+    {
+        bpm = Current.tempoBpm;
+        return bpm > 0f;
+    }
+
+    public static bool TryGetQuantizeFirstTap(out bool on)
+    {
+        on = Current.quantizeFirstTap == 1;
+        return Current.quantizeFirstTap >= 0;
+    }
+
+    public static bool TryGetLoopSync(out bool sync)
+    {
+        sync = Current.loopSync == 1;
+        return Current.loopSync >= 0;
+    }
+
     public static bool TryGetMasterVolume(out float value01) => TryGet(Current.master, out value01);
     public static bool TryGetBassAmount(out float value01) => TryGet(Current.bass, out value01);
 
@@ -84,6 +105,29 @@ public static class AppSettings
         if (Current.hasDarkMode && Current.darkMode == dark) return;
         Current.hasDarkMode = true;
         Current.darkMode = dark;
+        MarkDirty();
+    }
+
+    public static void SetTempoBpm(float bpm)
+    {
+        if (Mathf.Approximately(Current.tempoBpm, bpm)) return;
+        Current.tempoBpm = bpm;
+        MarkDirty();
+    }
+
+    public static void SetQuantizeFirstTap(bool on)
+    {
+        int v = on ? 1 : 0;
+        if (Current.quantizeFirstTap == v) return;
+        Current.quantizeFirstTap = v;
+        MarkDirty();
+    }
+
+    public static void SetLoopSync(bool sync)
+    {
+        int v = sync ? 1 : 0;
+        if (Current.loopSync == v) return;
+        Current.loopSync = v;
         MarkDirty();
     }
 
