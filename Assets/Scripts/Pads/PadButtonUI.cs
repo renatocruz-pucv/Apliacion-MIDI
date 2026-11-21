@@ -50,6 +50,19 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
              "Debe tener Raycast Target desactivado.")]
     [SerializeField] private Image loopIndicator;
 
+    public enum BadgeCorner { TopRight, TopLeft, BottomRight, BottomLeft }
+
+    [Tooltip("Si está activado, el indicador de loop se coloca solo como una insignia pequeña en una esquina del pad " +
+             "(y se ajusta si el pad cambia de tamaño). Desactivarlo para posicionarlo a mano en el Editor.")]
+    [SerializeField] private bool placeLoopIndicatorAsBadge = true;
+    [SerializeField] private BadgeCorner badgeCorner = BadgeCorner.TopRight;
+
+    [Tooltip("Tamaño de la insignia como fracción del pad (0.28 = 28 %).")]
+    [SerializeField] [Range(0.1f, 0.6f)] private float badgeSizeFraction = 0.28f;
+
+    [Tooltip("Separación del borde, como fracción del pad.")]
+    [SerializeField] [Range(0f, 0.2f)] private float badgeMarginFraction = 0.04f;
+
     [Tooltip("Segundos manteniendo el dedo quieto para activar el modo loop / ajuste de velocidad.")]
     [SerializeField] private float holdSeconds = 0.4f;
 
@@ -103,12 +116,46 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         // Editor (para poder verlo mientras se arma el prefab) quede visible
         // permanentemente en vez de solo durante el feedback.
         if (feedbackFlash != null) feedbackFlash.enabled = false;
-        if (loopIndicator != null) loopIndicator.enabled = false;
+        if (loopIndicator != null)
+        {
+            loopIndicator.enabled = false;
+            loopIndicator.raycastTarget = false; // nunca debe bloquear el toque del pad
+            if (placeLoopIndicatorAsBadge) PlaceLoopIndicatorAsBadge();
+        }
         if (emptyOverlay != null)
         {
             emptyOverlay.raycastTarget = false; // nunca debe bloquear el toque del pad
             emptyOverlay.enabled = false;
         }
+    }
+
+    /// <summary>Ancla el indicador de loop a una esquina del pad, con un tamaño proporcional al pad.</summary>
+    private void PlaceLoopIndicatorAsBadge()
+    {
+        if (loopIndicator == feedbackFlash)
+        {
+            Debug.LogWarning($"[PadButtonUI] '{name}': el indicador de loop es el mismo objeto que el destello " +
+                             "(Feedback Flash). Usa una Image aparte para el indicador; no se reposicionó para no afectar el destello.", this);
+            return;
+        }
+
+        RectTransform rect = loopIndicator.rectTransform;
+        float size = badgeSizeFraction;
+        float margin = badgeMarginFraction;
+
+        bool right = badgeCorner == BadgeCorner.TopRight || badgeCorner == BadgeCorner.BottomRight;
+        bool top = badgeCorner == BadgeCorner.TopRight || badgeCorner == BadgeCorner.TopLeft;
+
+        float xMax = right ? 1f - margin : margin + size;
+        float yMax = top ? 1f - margin : margin + size;
+
+        rect.anchorMin = new Vector2(xMax - size, yMax - size);
+        rect.anchorMax = new Vector2(xMax, yMax);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
+
+        loopIndicator.preserveAspect = true; // el ícono se mantiene cuadrado aunque el pad no lo sea
     }
 
     private void OnEnable()
