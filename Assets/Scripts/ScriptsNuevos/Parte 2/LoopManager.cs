@@ -99,6 +99,10 @@ public class LoopManager : MonoBehaviour
     [SerializeField] private Text speedHudLabel;
     [Tooltip("Image con Image Type = Filled (Vertical) que sube al acelerar.")]
     [SerializeField] private Image speedHudFill;
+    [Tooltip("El HUD aparece junto al pad que se está ajustando (encima o debajo, sin salirse de pantalla). " +
+             "Debe ser hijo directo del Canvas (o de un panel a pantalla completa), fuera de Layout Groups.")]
+    [SerializeField] private bool speedHudFollowsPad = true;
+    [SerializeField] private float speedHudGap = 12f;
 
     private class LoopState
     {
@@ -590,10 +594,20 @@ public class LoopManager : MonoBehaviour
     // HUD
     // ------------------------------------------------------------------
 
-    public void ShowSpeedHud(SoundBankSO bank, int slot)
+    public void ShowSpeedHud(SoundBankSO bank, int slot, RectTransform padRect = null)
     {
         if (speedHudRoot != null) speedHudRoot.SetActive(true);
         UpdateSpeedHud(bank, slot);
+
+        if (speedHudFollowsPad && speedHudRoot != null && padRect != null)
+        {
+            var hudRect = speedHudRoot.transform as RectTransform;
+            if (hudRect != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(hudRect); // el texto acaba de cambiar de tamaño
+                UIPlacement.PlaceNear(hudRect, padRect, speedHudGap, true);
+            }
+        }
     }
 
     public void UpdateSpeedHud(SoundBankSO bank, int slot)

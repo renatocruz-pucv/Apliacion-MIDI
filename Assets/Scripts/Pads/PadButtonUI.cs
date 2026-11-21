@@ -269,7 +269,7 @@ public class PadButtonUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         }
 
         startSpeed01 = loops.GetSpeed01(bank, slotIndex);
-        loops.ShowSpeedHud(bank, slotIndex);
+        loops.ShowSpeedHud(bank, slotIndex, transform as RectTransform);
     }
 
     private void EndGesture()
